@@ -11,7 +11,7 @@ def get_filenames(foldername):
 
 def file_hash(filename):
     with open(filename, "rb") as a_file:
-        md5_hash = md5()
+        md5_hash = md5()        
         content = a_file.read()
         md5_hash.update(content)
         digest = md5_hash.hexdigest()
@@ -32,6 +32,7 @@ HOST="127.0.0.1"
 PORT=1100
 
 
+
 with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
     s.connect((HOST,PORT))
     while True:
@@ -39,11 +40,15 @@ with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
         filesums = generate_dict(files)
         filename = os.path.basename(files[1])
         string = filename + " " + filesums[files[1]]
-        recieved = s.recv(3).decode()
-        if(recieved == READY):
+        status = s.recv(3).decode()
+        if(status == READY):
             print("in")
-            s.send(string.encode())
-
+            s.send((str(len(string)).zfill(8)).encode())
+            status = s.recv(3).decode()
+            if(status == READY):
+                print("siema")
+                print(string)
+                s.send(string.encode())
         data=s.recv(1024)
         print(data.decode())
 

@@ -23,7 +23,14 @@ void * socketThread(void *arg)
   send(newSocket, READY, sizeof(char) * 3, 0);
   for(;;){
 
-    n=recv(newSocket , client_message , 2000 , 0);
+    n=recv(newSocket , client_message , sizeof(char) * 8 , 0);
+    size = atoi(client_message);
+    printf("%d\n", size);
+    send(newSocket, READY, sizeof(char) * 3, 0);
+    //n=recv(newSocket , &size , 8 , 0);
+    memset(&client_message, 0, sizeof (client_message));
+    printf("in\n");
+    n=recv(newSocket , client_message , size * 8 , 0);
     printf("%s\n",client_message);
         if(n<1){
             break;
@@ -31,7 +38,7 @@ void * socketThread(void *arg)
 
     char *message = malloc(sizeof(client_message));
     strcpy(message,client_message);
-    printf("%ld - %ld - %s\n",sizeof(message), sizeof(client_message), message);
+    //printf("%ld - %ld - %s\n",sizeof(message), sizeof(client_message), message);
     sleep(1);
     send(newSocket,message,50,0);
     memset(&client_message, 0, sizeof (client_message));
