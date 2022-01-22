@@ -35,21 +35,21 @@ PORT=1100
 
 with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
     s.connect((HOST,PORT))
-    while True:
-        files = get_filenames(foldername)
-        filesums = generate_dict(files)
-        filename = os.path.basename(files[1])
-        string = filename + " " + filesums[files[1]]
+    
+    files = get_filenames(foldername)
+    filesums = generate_dict(files)
+    status = s.recv(3).decode()
+    if(status == READY):
+        s.send((str(len(files)).zfill(8)).encode())
+    for i in range(len(files)):
+        filename = os.path.basename(files[i])
+        string = filename + " " + filesums[files[i]]
         status = s.recv(3).decode()
         if(status == READY):
-            print("in")
             s.send((str(len(string)).zfill(8)).encode())
             status = s.recv(3).decode()
             if(status == READY):
-                print("siema")
                 print(string)
                 s.send(string.encode())
-        data=s.recv(1024)
-        print(data.decode())
 
     s.close()

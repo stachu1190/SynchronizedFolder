@@ -7,12 +7,16 @@
 #include <fcntl.h> // for open
 #include <unistd.h> // for close
 #include<pthread.h>
+#include <map>
 
 #define READY "101"
 
 char client_message[2000];
 char buffer[1024];
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+typedef std::map<const char *, const char *> Dict;
+Dict a;
+//struct file
 
 void * socketThread(void *arg)
 {
@@ -20,30 +24,33 @@ void * socketThread(void *arg)
   int newSocket = *((int *)arg);
   int n;
   int size;
+  int count;
   send(newSocket, READY, sizeof(char) * 3, 0);
+  recv(newSocket , client_message , sizeof(char) * 8 , 0);
+  count = atoi(client_message);
+  memset(&client_message, 0, sizeof (client_message));
   for(;;){
-
-    n=recv(newSocket , client_message , sizeof(char) * 8 , 0);
-    size = atoi(client_message);
-    printf("%d\n", size);
-    send(newSocket, READY, sizeof(char) * 3, 0);
-    //n=recv(newSocket , &size , 8 , 0);
-    memset(&client_message, 0, sizeof (client_message));
-    printf("in\n");
-    n=recv(newSocket , client_message , size * 8 , 0);
-    printf("%s\n",client_message);
-        if(n<1){
-            break;
-        }
-
-    char *message = malloc(sizeof(client_message));
-    strcpy(message,client_message);
-    //printf("%ld - %ld - %s\n",sizeof(message), sizeof(client_message), message);
-    sleep(1);
-    send(newSocket,message,50,0);
-    memset(&client_message, 0, sizeof (client_message));
-
+    for(int i = 0; i < count; i++)
+    {
+      send(newSocket, READY, sizeof(char) * 3, 0);
+      n=recv(newSocket , client_message , sizeof(char) * 8 , 0);
+      if(n<1) break;
+      size = atoi(client_message);
+      send(newSocket, READY, sizeof(char) * 3, 0);
+      //n=recv(newSocket , &size , 8 , 0);
+      memset(&client_message, 0, sizeof (client_message));
+      n=recv(newSocket , client_message , size * 8 , 0);
+      printf("%s\n",client_message);
+      if(n<1) break;
+      char *message = (char *) malloc(sizeof(client_message));
+      strcpy(message,client_message);
+      memset(&client_message, 0, sizeof (client_message));
     }
+    n=recv(newSocket , client_message , sizeof(char) * 8 , 0);
+    if(n<1) break;
+
+  }
+  
     printf("Exit socketThread \n");
 
     pthread_exit(NULL);
