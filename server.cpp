@@ -7,16 +7,25 @@
 #include <fcntl.h> // for open
 #include <unistd.h> // for close
 #include<pthread.h>
-#include <map>
+#include <vector>
+#include<string>
+#include<iostream>
+#include<map>
 
 #define READY "101"
 
 char client_message[2000];
 char buffer[1024];
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-typedef std::map<const char *, const char *> Dict;
-Dict a;
-//struct file
+std::vector<std::vector<std::string>> files;
+
+std::string toString(char * str, int first, int last)
+{
+  std::string ret = "";
+  for(int i = first; i < last + 1; i++)
+      ret.push_back(str[i]);
+  return ret;
+}
 
 void * socketThread(void *arg)
 {
@@ -40,17 +49,25 @@ void * socketThread(void *arg)
       //n=recv(newSocket , &size , 8 , 0);
       memset(&client_message, 0, sizeof (client_message));
       n=recv(newSocket , client_message , size * 8 , 0);
-      printf("%s\n",client_message);
+      //printf("%s\n",client_message);
       if(n<1) break;
-      char *message = (char *) malloc(sizeof(client_message));
-      strcpy(message,client_message);
+      //const char * hashsum = strtok(client_message, "_");
+      char *quotPtr = strchr(client_message, '\n');
+      int position = quotPtr - client_message;
+      std::string name = toString(client_message, 0, position-1);
+      std::string hashsum = toString(client_message, position + 1, size - 1);
+      std::vector<std::string> temp;
+      temp.push_back(name);
+      temp.push_back(hashsum);
+      files.push_back(temp);
       memset(&client_message, 0, sizeof (client_message));
     }
     n=recv(newSocket , client_message , sizeof(char) * 8 , 0);
     if(n<1) break;
 
   }
-  
+    for (int i = 0; i < files.size(); i++)
+      std::cout << files[i][0] << " " << files[i][1] <<std::endl;
     printf("Exit socketThread \n");
 
     pthread_exit(NULL);

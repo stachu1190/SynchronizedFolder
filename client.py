@@ -43,7 +43,7 @@ with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
         s.send((str(len(files)).zfill(8)).encode())
     for i in range(len(files)):
         filename = os.path.basename(files[i])
-        string = filename + " " + filesums[files[i]]
+        string = filename + "\n" + filesums[files[i]]
         status = s.recv(3).decode()
         if(status == READY):
             s.send((str(len(string)).zfill(8)).encode())
