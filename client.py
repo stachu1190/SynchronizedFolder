@@ -51,6 +51,8 @@ with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
         s.send((str(len(files)).zfill(8)).encode())
     for i in range(len(files)):
         filename = os.path.basename(files[i])
+        print(filename)
+        print("----------------------")
         string = filename + "\n" + filesums[files[i]] + "\n" + str(filedates[files[i]])
         status = s.recv(3).decode() # zawiesza
         print(status)
@@ -67,16 +69,17 @@ with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
                     content = file.read()
                     s.send((str(len(content)).zfill(8)).encode())
                     parts = [content[i:i+2000] for i in range(0, len(content), 2000)]
-                    for j in range(int(len(content)/2000)+1):
+                    for j in range(len(parts)):
                         status = s.recv(3).decode()
                         print(status)
                         s.send(parts[j].encode())
                     file.close()
                 if(status == SEND_FROM_SERVER):
                     file = open(files[i], "w")
-                    size = s.recv(2000).decode()
-                    size = int(size)
-                    print(size)
+                    s.send(str(READY).encode())
+                    msg = s.recv(2000).decode()
+                    file.write(msg)
+                    file.close()
 
         print("--------------------")
     

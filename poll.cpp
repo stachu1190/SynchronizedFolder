@@ -167,6 +167,7 @@
                   on_client[i] = false;
                 bool exists = false;
                 bool leave = true;
+                memset(&client_message, 0, sizeof (client_message));
                 for(int i = 0; i < files.size(); i++)
                 {
                     if(files[i][0] == temp[0])
@@ -178,6 +179,7 @@
                           on_client[i] = true;
                           leave = false;
                           files[i] = temp;
+                          updated.push_back(temp);
                           std::fstream file;
                           file.open("./files/" + temp[0], std::ios::out | std::ios::trunc);
                           if(file.good() == true)
@@ -188,6 +190,7 @@
                           send(newSocket, SEND_FROM_CLIENT, sizeof(char) * 3, 0);
                           recv(newSocket , client_message , sizeof(char) * 8 , 0);
                           int length = atoi(client_message);
+                          memset(&client_message, 0, sizeof (client_message));
                           int parts = length/2000;
                           for(int i = 0; i < parts + 1; i++)
                           {
@@ -202,6 +205,22 @@
                           break;
                         }
                         else{
+                          leave = false;
+                          send(newSocket, SEND_FROM_SERVER, sizeof(char) * 3, 0);
+                          std::fstream file;
+                          file.open("./files/" + temp[0], std::ios::in);
+                          if(file.good() == true)
+                          {
+                              std::cout << "Uzyskano dostep do pliku!" << std::endl;
+                              //tu operacje na pliku
+                          } else std::cout << "Dostep do pliku zostal zabroniony!" << std::endl;
+                          memset(&buffer, 0, sizeof (buffer));
+                          file.read(buffer, 1024);
+                          recv(newSocket , client_message , sizeof(char) * 3 , 0);
+                          int buffer_size = sizeof(buffer) / sizeof(buffer[0]);
+                          memset(&client_message, 0, sizeof (client_message));
+                          send(newSocket, buffer, sizeof(char) * buffer_size, 0);
+                          file.close();
                           exists = true;
                           break;
                         }
