@@ -10,14 +10,14 @@
 #include <vector>
 #include<string>
 #include<iostream>
-#include<map>
 
 #define READY "101"
+#define SENDFILE "102"
+#define CONTINUE "103"
 
-char client_message[2000];
-char buffer[1024];
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 std::vector<std::vector<std::string>> files;
+std::string change_name = "";
 
 std::string toString(char * str, int first, int last)
 {
@@ -31,6 +31,8 @@ void * socketThread(void *arg)
 {
   printf("new thread \n");
   int newSocket = *((int *)arg);
+  char client_message[2000];
+  char buffer[1024];
   int n;
   int size;
   int count;
@@ -38,8 +40,7 @@ void * socketThread(void *arg)
   recv(newSocket , client_message , sizeof(char) * 8 , 0);
   count = atoi(client_message);
   memset(&client_message, 0, sizeof (client_message));
-  for(;;){
-    for(int i = 0; i < count; i++)
+  for(int i = 0; i < count; i++)
     {
       send(newSocket, READY, sizeof(char) * 3, 0);
       n=recv(newSocket , client_message , sizeof(char) * 8 , 0);
@@ -55,19 +56,48 @@ void * socketThread(void *arg)
       char *quotPtr = strchr(client_message, '\n');
       int position = quotPtr - client_message;
       std::string name = toString(client_message, 0, position-1);
-      std::string hashsum = toString(client_message, position + 1, size - 1);
+      quotPtr = strchr(&client_message[position + 1], '\n');
+      int position2 = quotPtr - client_message;
+      std::string hashsum = toString(client_message, position + 1, position2 - 1);
+      std::string date = toString(client_message, position2 + 1, size - 1);
       std::vector<std::string> temp;
       temp.push_back(name);
       temp.push_back(hashsum);
-      files.push_back(temp);
+      temp.push_back(date);
+      bool exists == false;
+      for(int i = 0; i < files.size(); i++)
+      {
+          if(files[i][0] == temp[0] && files[i][1] != files[1])
+          {
+            if(files[i][1] != files[1])
+              if(std::stof(files[i][0]) < std::stof(temp[0]))
+              {
+                  //TODO
+              }
+              else{
+                //TODO
+              }
+          }
+          else if(files[i][0] == temp[0])
+          {
+              exists = true;
+              break;
+          }
+      }
+      if(!exists)
+      {
+        files.push_back(temp);
+        change_name = temp[0]
+      }
       memset(&client_message, 0, sizeof (client_message));
     }
+  for(;;){
     n=recv(newSocket , client_message , sizeof(char) * 8 , 0);
     if(n<1) break;
 
   }
     for (int i = 0; i < files.size(); i++)
-      std::cout << files[i][0] << " " << files[i][1] <<std::endl;
+      std::cout << files[i][0] << " " << files[i][1] << " " << files[i][2] << std::endl;
     printf("Exit socketThread \n");
 
     pthread_exit(NULL);

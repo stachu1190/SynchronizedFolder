@@ -1,7 +1,7 @@
 import socket
 from hashlib import md5
 import os
-from constant import READY
+from constant import READY, SEND_FROM_CLIENT, SEND_FROM_SERVER, CONTINUE
 
 def get_filenames(foldername):
     files = []
@@ -17,15 +17,18 @@ def file_hash(filename):
         digest = md5_hash.hexdigest()
         return digest
 
-
 def generate_dict(files):
     filesums = dict()
     for name in files:
         filesums[name] = file_hash(name)
     return filesums
-    
-
-foldername = "../folder1"
+def get_dates(files):
+    filedates = dict()
+    for name in files:
+        filedates[name] = os.path.getmtime(name)
+    return filedates
+      
+foldername = "../folder2"
 files = get_filenames(foldername)
 
 HOST="127.0.0.1"
@@ -38,18 +41,38 @@ with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
     
     files = get_filenames(foldername)
     filesums = generate_dict(files)
+    filedates = get_dates(files)
     status = s.recv(3).decode()
     if(status == READY):
         s.send((str(len(files)).zfill(8)).encode())
     for i in range(len(files)):
         filename = os.path.basename(files[i])
-        string = filename + "\n" + filesums[files[i]]
-        status = s.recv(3).decode()
+        string = filename + "\n" + filesums[files[i]] + "\n" + str(filedates[files[i]])
+        status = s.recv(3).decode() # zawiesza
+        print(status)
         if(status == READY):
             s.send((str(len(string)).zfill(8)).encode())
             status = s.recv(3).decode()
+            print(status)
             if(status == READY):
-                print(string)
                 s.send(string.encode())
+                status = s.recv(3).decode()
+                print(status)
+                if(status == SEND_FROM_CLIENT):
+                    file = open(files[i],mode='r')
+                    content = file.read()
+                    s.send((str(len(content)).zfill(8)).encode())
+                    parts = [content[i:i+2000] for i in range(0, len(content), 2000)]
+                    for j in range(int(len(content)/2000)+1):
+                        status = s.recv(3).decode()
+                        print(status)
+                        s.send(parts[j].encode())
+                    file.close()
+        print("--------------------")
+    
+
+
+
+    input()
 
     s.close()
