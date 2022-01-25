@@ -1,6 +1,7 @@
 import socket
 from hashlib import md5
 import os
+import sys
 from constant import READY, SEND_FROM_CLIENT, SEND_FROM_SERVER, CONTINUE
 
 def get_filenames(foldername):
@@ -27,8 +28,11 @@ def get_dates(files):
     for name in files:
         filedates[name] = os.path.getmtime(name)
     return filedates
-      
-foldername = "../folder2"
+
+try:
+  foldername = sys.argv[1]
+except:
+  exit(-1)
 files = get_filenames(foldername)
 
 HOST="127.0.0.1"
@@ -68,6 +72,12 @@ with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
                         print(status)
                         s.send(parts[j].encode())
                     file.close()
+                if(status == SEND_FROM_SERVER):
+                    file = open(files[i], "w")
+                    size = s.recv(2000).decode()
+                    size = int(size)
+                    print(size)
+
         print("--------------------")
     
 
