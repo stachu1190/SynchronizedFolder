@@ -2,7 +2,7 @@ import socket
 from hashlib import md5
 import os
 import sys
-from constant import READY, SEND_FROM_CLIENT, SEND_FROM_SERVER, CONTINUE
+from constant import READY, SEND_FROM_CLIENT, SEND_FROM_SERVER, CONTINUE, UP_TO_DATE
 
 def get_filenames(foldername):
     files = []
@@ -51,7 +51,7 @@ with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
         s.send((str(len(files)).zfill(8)).encode())
     for i in range(len(files)):
         filename = os.path.basename(files[i])
-        print(filename)
+        print(filename + " " + filesums[files[i]])
         print("----------------------")
         string = filename + "\n" + filesums[files[i]] + "\n" + str(filedates[files[i]])
         status = s.recv(3).decode() # zawiesza
@@ -78,14 +78,31 @@ with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
                     file = open(files[i], "w")
                     s.send(str(READY).encode())
                     msg = s.recv(2000).decode()
+                    print("wiadomość", msg)
                     file.write(msg)
                     file.close()
 
         print("--------------------")
+    while True:
+        status = s.recv(3).decode()
+        print(status)
+        if status == SEND_FROM_SERVER:
+            s.send(str(READY).encode())
+            name = s.recv(100).decode()
+            s.send(str(READY).encode())
+            status = s.recv(3).decode()
+            file = open(foldername + "/" + name, "w")
+            if status == READY:
+                s.send(str(READY).encode())
+                msg = s.recv(2000).decode()
+                file.write(msg)
+                file.close()
+            else:
+                print("nie udało się otworzyć pliku")
+                file.close()
+        if status == UP_TO_DATE:
+            print("Up to date")
+            exit(0)
     
-
-
-
-    input()
 
     s.close()
