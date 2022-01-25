@@ -102,7 +102,7 @@ with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
                 file.close()
         if status == UP_TO_DATE:
             print("Up to date")
-            exit(0)
+            input()
     
 
     s.close()

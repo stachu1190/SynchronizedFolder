@@ -22,8 +22,10 @@
 #define SEND_FROM_CLIENT "201"
 #define SEND_FROM_SERVER "202"
 
-std::vector<std::vector<std::string>> files;
-std::vector<std::vector<std::string>> updated;
+std::vector<std::vector<std::string>> files;   // stores information about the files
+std::vector<std::vector<std::string>> updated; // stores info about updated files
+int update_source = -1;
+int to_update; //fd of socket which updated server files
 
 std::string toString(char *str, int first, int last)
 {
@@ -99,7 +101,47 @@ int main(void)
 
     for (int i = 0; i < currentSize; i++)
     {
+      if (to_update <= 0)
+      {
+        updated.clear();
+        update_source = -1;
+      }
+      if (to_update > 0 and poll_set[i].fd != update_source)
+      {
+        to_update -= 1;
+        char client_message[2000];
+        char buffer[1024];
+        for(int j = 0; j < updated.size(); j++)
+        {
+                send(poll_set[i].fd, SEND_FROM_SERVER, sizeof(char) * 3, 0);
+                char *msg = new char[updated[j][0].length() + 1];
+                strcpy(msg, updated[j][0].c_str());
+                recv(poll_set[i].fd, client_message, sizeof(char) * 3, 0);
+                send(poll_set[i].fd, msg, sizeof(char) * strlen(msg), 0);
+                recv(poll_set[i].fd, client_message, sizeof(char) * 3, 0);
+                std::fstream file;
+                file.open("./files/" + updated[j][0], std::ios::in);
+                if (file.good() == true)
+                {
+                  std::cout << "Uzyskano dostep do pliku!" << std::endl;
+                }
+                else
+                {
+                  std::cout << "Dostep do pliku zostal zabroniony!" << std::endl;
+                  send(poll_set[i].fd, CONTINUE, sizeof(char) * 3, 0);
+                  break;
+                }
+                send(poll_set[i].fd, READY, sizeof(char) * 3, 0);
+                memset(&buffer, 0, sizeof(buffer));
+                file.read(buffer, 1024);
+                recv(poll_set[i].fd, client_message, sizeof(char) * 3, 0);
+                int buffer_size = sizeof(buffer) / sizeof(buffer[0]);
+                memset(&client_message, 0, sizeof(client_message));
+                send(poll_set[i].fd, buffer, sizeof(char) * buffer_size, 0);
+                file.close();
+        }
 
+      }
       if (poll_set[i].revents == 0)
       {
         continue;
@@ -191,6 +233,8 @@ int main(void)
                       leave = false;
                       files[i] = temp;
                       updated.push_back(temp);
+                      update_source = poll_set[ndfs - 1].fd;
+                      to_update = ndfs - 2;
                       std::fstream file;
                       file.open("./files/" + temp[0], std::ios::out | std::ios::trunc);
                       if (file.good() == true)
@@ -258,6 +302,8 @@ int main(void)
               {
                 files.push_back(temp);
                 updated.push_back(temp);
+                update_source = poll_set[ndfs - 1].fd;
+                to_update = ndfs - 2;
                 std::fstream file;
                 file.open("./files/" + temp[0], std::ios::out | std::ios::trunc);
                 if (file.good() == true)
